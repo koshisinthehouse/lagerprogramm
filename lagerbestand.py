@@ -58,6 +58,10 @@ class CSVLoaderApp(QMainWindow):
 
     def display_csv_data(self):
         filename_today, filename_yesterday = self.generate_filenames_for_last_two_days()
+        
+        # Entferne die Dateiendung '.csv' für die Anzeige in den Spaltenbeschriftungen
+        label_today = filename_today.replace(".csv", "")
+        label_yesterday = filename_yesterday.replace(".csv", "")
 
         # Überprüfe, ob die Dateien existieren
         if not os.path.exists(filename_today) or not os.path.exists(filename_yesterday):
@@ -76,33 +80,26 @@ class CSVLoaderApp(QMainWindow):
         df_today.set_index('SKU', inplace=True)
         df_yesterday.set_index('SKU', inplace=True)
 
-        # Merge die DataFrames basierend auf 'SKU' effizient
-        merged_df = pd.merge(df_today[['Avaliable', 'Stock']], df_yesterday[['Avaliable', 'Stock']], left_index=True, right_index=True, suffixes=(' (Heute)', ' (Gestern)'))
+        # Merge die DataFrames basierend auf 'SKU'
+        merged_df = pd.merge(df_today[['Avaliable', 'Stock']], df_yesterday[['Avaliable', 'Stock']], left_index=True, right_index=True, suffixes=(f' ({label_today})', f' ({label_yesterday})'))
 
         # Berechne die Differenz der 'Stock'-Werte
-        merged_df['Stock-Differenz'] = merged_df['Stock (Heute)'] - merged_df['Stock (Gestern)']
-
-        # Debugging-Ausgabe
-        print("Merged DF:")
-        print(merged_df.head())
-
-        # Gib die Länge des DataFrame aus
-        print("Länge von merged_df:", len(merged_df))
+        merged_df['Stock-Differenz'] = merged_df[f'Stock ({label_today})'] - merged_df[f'Stock ({label_yesterday})']
 
         # Setze die Tabelle auf
         self.tableWidget.clear()
         self.tableWidget.setRowCount(len(merged_df.index))
-        self.tableWidget.setColumnCount(8)  # 8 Spalten für SKU und die restlichen Daten
-        self.tableWidget.setHorizontalHeaderLabels(['SKU', 'Avaliable (Heute)', 'Stock (Heute)', 'Avaliable (Gestern)', 'Stock (Gestern)', 'SKU (Gestern)', 'Stock-Differenz'])
-
-        print("table created")
+        self.tableWidget.setColumnCount(len(merged_df.columns) + 1)  # Anzahl der Spalten in merged_df + 1 für SKU
+        # Aktualisiere die Spaltenbeschriftungen mit den dynamisch generierten Labels
+        headers = ['SKU'] + [f'{col}' for col in merged_df.columns]
+        self.tableWidget.setHorizontalHeaderLabels(headers)
 
         # Fülle die Tabelle
         for row, (index, row_data) in enumerate(merged_df.iterrows()):
             self.tableWidget.setItem(row, 0, QTableWidgetItem(index))  # SKU
             for col, data in enumerate(row_data):
-                table_item = QTableWidgetItem(str(data))
-                self.tableWidget.setItem(row, col + 1, table_item)  # Verschiebe um 1, um die SKU zu überspringen
+                self.tableWidget.setItem(row, col + 1, QTableWidgetItem(str(data)))
+
 
 
 
@@ -110,4 +107,5 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = CSVLoaderApp()
     window.show()
+    window.display_csv_data()
     sys.exit(app.exec_())
