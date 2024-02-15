@@ -12,6 +12,7 @@ class CSVLoaderApp(QMainWindow):
         self.setWindowTitle("Lagerbestand")
         self.csv_url = "https://exhaust.pl/produts_stock/export.csv"
         self.last_downloaded_file = None  # Hält den Pfad der zuletzt heruntergeladenen Datei
+        self.resize(1024, 768)  # Fenstergröße initial auf 1280x1024 Pixel setzen
 
         mainWidget = QWidget()
         self.setCentralWidget(mainWidget)
@@ -24,19 +25,13 @@ class CSVLoaderApp(QMainWindow):
 
         # Button zum Laden und Anzeigen der Daten aus der CSV-Datei
         self.loadButton = QPushButton("Daten anzeigen")
-        self.loadButton.clicked.connect(self.load_current_csv)
+        self.loadButton.clicked.connect(self.display_csv_data)
         layout.addWidget(self.loadButton)
 
         # QTableWidget-Konfiguration
         self.tableWidget = QTableWidget()
         layout.addWidget(self.tableWidget)
         mainWidget.setLayout(layout)
-
-    @Slot()
-    def load_current_csv(self):
-        filepath = self.download_and_save_csv()
-        if filepath:  # Prüfe, ob der Download erfolgreich war
-            self.display_csv_data()
 
     def download_and_save_csv(self):
         try:
