@@ -1,0 +1,6 @@
+
+pandas
+requests
+pyinstaller
+PySide6
+sqlite3

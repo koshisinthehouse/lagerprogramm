@@ -1,0 +1,1 @@
+pyinstaller --onefile lagerbestand.py
