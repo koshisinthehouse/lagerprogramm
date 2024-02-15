@@ -90,6 +90,15 @@ class CSVLoaderApp(QMainWindow):
         self.tableWidget.clear()
         self.tableWidget.setRowCount(len(merged_df.index))
         self.tableWidget.setColumnCount(len(merged_df.columns))
+        columnWidth=130;
+        self.tableWidget.setColumnWidth(0, columnWidth)
+        self.tableWidget.setColumnWidth(1, columnWidth)
+        self.tableWidget.setColumnWidth(2, columnWidth)
+        self.tableWidget.setColumnWidth(3, columnWidth)
+        self.tableWidget.setColumnWidth(4, columnWidth)
+        self.tableWidget.setColumnWidth(5, columnWidth)
+        self.tableWidget.setColumnWidth(6, columnWidth)
+        self.tableWidget.setColumnWidth(7, columnWidth)
         # Aktualisiere die Spaltenbeschriftungen mit den dynamisch generierten Labels
         headers = [f'{col}' for col in merged_df.columns]
         self.tableWidget.setHorizontalHeaderLabels(headers)
