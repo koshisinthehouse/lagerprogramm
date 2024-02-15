@@ -137,4 +137,4 @@ if __name__ == "__main__":
     window = CSVLoaderApp()
     window.show()
     window.display_csv_data()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
