@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QTableWidget, QTableWidgetItem, QMessageBox
 from PySide6.QtCore import Slot
+from PySide6.QtGui import QBrush, QColor
 from datetime import datetime, timedelta
 import os
 import sys
@@ -108,8 +109,27 @@ class CSVLoaderApp(QMainWindow):
             self.tableWidget.setItem(row, 0, QTableWidgetItem(index))  # SKU
             for col, data in enumerate(row_data):
                 self.tableWidget.setItem(row, col, QTableWidgetItem(str(data)))
+        
+        # Annahme, dass Sie die Tabelle hier bereits gefüllt haben
+        stock_diff_column_index = self.tableWidget.columnCount() - 1  # Angenommen, Stock-Differenz ist die letzte Spalte
 
-
+        for row in range(self.tableWidget.rowCount()):
+            item = self.tableWidget.item(row, stock_diff_column_index)
+            if item:  # Überprüfen Sie, ob das Item existiert
+                stock_diff_value = float(item.text())  # Konvertieren Sie den Wert in float
+                color = None
+                if stock_diff_value < 0:
+                    color = QBrush(QColor(255, 0, 0))  # Rot
+                elif stock_diff_value > 0:
+                    color = QBrush(QColor(0, 255, 0))  # Grün
+                
+                if color:
+                    for col in range(self.tableWidget.columnCount()):
+                        self.tableWidget.item(row, col).setBackground(color)
+            else:
+                # Dieser Block wird ausgeführt, wenn kein QTableWidgetItem für die Zelle existiert.
+                # Sie können hier ein neues Item erstellen oder eine Warnung ausgeben.
+                print(f"Warnung: Kein Item in Zeile {row}, Spalte {stock_diff_column_index} gefunden.")
 
 
 if __name__ == "__main__":
