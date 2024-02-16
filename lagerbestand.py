@@ -34,6 +34,14 @@ class CSVLoaderApp(QMainWindow):
         layout.addWidget(self.tableWidget)
         mainWidget.setLayout(layout)
 
+    def find_last_two_csv_files(self):
+        # Liste alle CSV-Dateien im aktuellen Verzeichnis auf
+        csv_files = [f for f in os.listdir('.') if f.endswith('.csv')]
+        # Sortiere die Dateien basierend auf dem Datum im Dateinamen
+        csv_files.sort(key=lambda date: datetime.strptime(date, "%d-%m-%Y.csv"), reverse=True)
+        # Gib die letzten beiden Dateien zurück, falls verfügbar
+        return csv_files[:2] if len(csv_files) >= 2 else csv_files
+
     def download_and_save_csv(self):
         try:
             response = requests.get(self.csv_url)
@@ -58,21 +66,20 @@ class CSVLoaderApp(QMainWindow):
         return filename_today, filename_yesterday
 
     def display_csv_data(self):
-        filename_today, filename_yesterday = self.generate_filenames_for_last_two_days()
-        
-        # Entferne die Dateiendung '.csv' für die Anzeige in den Spaltenbeschriftungen
-        label_today = filename_today.replace(".csv", "")
-        label_yesterday = filename_yesterday.replace(".csv", "")
+        last_two_files = self.find_last_two_csv_files()
 
-        # Überprüfe, ob die Dateien existieren
-        if not os.path.exists(filename_today) or not os.path.exists(filename_yesterday):
-            QMessageBox.warning(self, "Warnung", "Eine oder beide Dateien für die letzten beiden Tage fehlen.")
+        if len(last_two_files) < 2:
+            QMessageBox.warning(self, "Warnung", "Nicht genügend CSV-Dateien gefunden.")
             return
 
-        # Lese die CSV-Dateien ein
-        df_today = pd.read_csv(filename_today, sep=',')
-        df_yesterday = pd.read_csv(filename_yesterday, sep=',')
+        # Entferne die Dateiendung '.csv' für die Anzeige in den Spaltenbeschriftungen
+        label_today = last_two_files[0].replace(".csv", "")
+        label_yesterday = last_two_files[1].replace(".csv", "")
 
+        # Lese die letzten beiden CSV-Dateien ein
+        df_today = pd.read_csv(last_two_files[0], sep=',')
+        df_yesterday = pd.read_csv(last_two_files[1], sep=',')
+        
         # Entferne Duplikate in der SKU-Spalte
         df_today.drop_duplicates(subset=['SKU'], inplace=True)
         df_yesterday.drop_duplicates(subset=['SKU'], inplace=True)
