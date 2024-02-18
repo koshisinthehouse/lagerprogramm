@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import os
 
 import sys
+from numpy import int64
 
 import requests
 
@@ -192,17 +193,36 @@ class CSVLoaderApp(QMainWindow):
         # Entferne Duplikate in der SKU-Spalte
         df_today.drop_duplicates(subset=['SKU'], inplace=True)
         df_yesterday.drop_duplicates(subset=['SKU'], inplace=True)
- 
+
+        # Lade die Bestandsdaten aus der stock_data.csv
+        stock_data_path = os.path.join(self.getAppDirectory(), 'stock_data.csv')
+        if os.path.exists(stock_data_path):
+            stock_df = pd.read_csv(stock_data_path)
+             # Konvertiere die 'SKU'-Spalte explizit in String, um Typkonflikte zu vermeiden
+            stock_df['SKU'] = stock_df['SKU'].astype(str)
+            stock_df['Stock'] = stock_df['Stock'].astype(int64)
+        else:
+            QMessageBox.warning(self, "Warnung", "Stock-Daten-Datei nicht gefunden.")
+            return
+
         # Setze 'SKU' als Index
         #df_today.set_index('SKU', inplace=True)
         #df_yesterday.set_index('SKU', inplace=True)
  
         # Merge die DataFrames basierend auf 'SKU'
-        merged_df = pd.merge(df_today[['SKU','Avaliable', 'Stock']], df_yesterday[['SKU','Avaliable', 'Stock']], left_index=True, right_index=True, suffixes=(f' ({label_today})', f' ({label_yesterday})'))
- 
+        merged_df = pd.merge(df_today[['SKU', 'Avaliable', 'Stock']], df_yesterday[['SKU', 'Avaliable', 'Stock']], on='SKU', suffixes=(f' ({label_today})', f' ({label_yesterday})'))
+
+
         # Berechne die Differenz der 'Stock'-Werte
         merged_df['Stock-Differenz'] = merged_df[f'Stock ({label_today})'] - merged_df[f'Stock ({label_yesterday})']
  
+
+        # Füge die Bestand-Daten zur merged_df hinzu und fülle fehlende Werte mit 0 auf
+        merged_df = pd.merge(merged_df, stock_df[['SKU', 'Stock']], on='SKU', how='left').fillna(0)
+        merged_df.rename(columns={'Stock': 'Aktueller Bestand'}, inplace=True)
+        # Konvertiere 'Aktueller Bestand' explizit in int, um Dezimalstellen zu entfernen
+        merged_df['Aktueller Bestand'] = merged_df['Aktueller Bestand'].astype(int)
+
         # Setze die Tabelle auf
         self.tableWidget.clear()
         self.tableWidget.setRowCount(len(merged_df.index))
@@ -227,7 +247,7 @@ class CSVLoaderApp(QMainWindow):
                 self.tableWidget.setItem(row, col, QTableWidgetItem(str(data)))
        
         # Annahme, dass Sie die Tabelle hier bereits gefüllt haben
-        stock_diff_column_index = self.tableWidget.columnCount() - 1  # Angenommen, Stock-Differenz ist die letzte Spalte
+        stock_diff_column_index = self.tableWidget.columnCount() - 2  # Angenommen, Stock-Differenz ist die letzte Spalte
  
         for row in range(self.tableWidget.rowCount()):
             item = self.tableWidget.item(row, stock_diff_column_index)
