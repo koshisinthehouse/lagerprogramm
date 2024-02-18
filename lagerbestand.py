@@ -80,37 +80,37 @@ class CSVLoaderApp(QMainWindow):
         mainWidget.setLayout(layout)
 
     def updateEbayAmount(self):
-        sku = self.skuTextField.text().strip()  # Entferne führende und abschließende Leerzeichen
+        sku = self.skuTextField.text().strip()
         try:
-            stock = int(self.stockTextField.text().strip())  # Versuche, den Bestand in eine Ganzzahl umzuwandeln
+            stock = int(self.stockTextField.text().strip())
         except ValueError:
             QMessageBox.warning(self, "Ungültiger Bestand", "Der Bestand muss eine ganze Zahl sein.")
             return
 
         csv_path = os.path.join(self.getAppDirectory(), 'stock_data.csv')
 
-        # Überprüfe, ob die CSV-Datei existiert. Wenn ja, lese sie ein; wenn nein, erstelle einen leeren DataFrame
+        # Überprüfe, ob die CSV-Datei existiert. Wenn ja, lese sie ein; wenn nein, erstelle einen leeren DataFrame.
         if os.path.exists(csv_path):
             df = pd.read_csv(csv_path)
         else:
             df = pd.DataFrame(columns=['SKU', 'Stock'])
 
-        # Prüfe, ob die SKU bereits im DataFrame vorhanden ist
-        if not df[df['SKU'] == sku].empty:
-            # Aktualisiere den Bestand für die existierende SKU
+        # Überprüfe, ob die SKU bereits im DataFrame vorhanden ist.
+        if sku in df['SKU'].values:
+            # Aktualisiere den Bestand für die existierende SKU.
             df.loc[df['SKU'] == sku, 'Stock'] = stock
         else:
-            # Füge einen neuen Datensatz hinzu, wenn die SKU nicht vorhanden ist
-            new_row = {'SKU': sku, 'Stock': stock}
-            df = df._append(new_row, ignore_index=True)
+            # Füge einen neuen Datensatz hinzu, wenn die SKU nicht vorhanden ist.
+            new_row = pd.DataFrame({'SKU': [sku], 'Stock': [stock]})
+            df = pd.concat([df, new_row], ignore_index=True)
 
-        # Entferne Duplikate basierend auf der 'SKU' Spalte, behalte den letzten Eintrag
-        df.drop_duplicates(subset='SKU', keep='last', inplace=True)
+        # Entferne Duplikate basierend auf der 'SKU' Spalte, behalte den letzten Eintrag.
+        df = df.drop_duplicates(subset='SKU', keep='last')
 
-        # Stelle sicher, dass der 'Stock' als Ganzzahl gespeichert wird
+        # Stelle sicher, dass der 'Stock' als Ganzzahl gespeichert wird.
         df['Stock'] = df['Stock'].astype(int)
 
-        # Speichere den aktualisierten DataFrame in der CSV-Datei
+        # Speichere den aktualisierten DataFrame in der CSV-Datei.
         df.to_csv(csv_path, index=False)
 
         QMessageBox.information(self, "Bestand aktualisiert", "Der Bestand wurde erfolgreich aktualisiert.")
