@@ -79,9 +79,42 @@ class CSVLoaderApp(QMainWindow):
         layout.addWidget(self.tableWidget)
         mainWidget.setLayout(layout)
 
-    # Ebay Bestand aktualsiieren
     def updateEbayAmount(self):
-        print("TODO")
+        sku = self.skuTextField.text().strip()  # Entferne führende und abschließende Leerzeichen
+        try:
+            stock = int(self.stockTextField.text().strip())  # Versuche, den Bestand in eine Ganzzahl umzuwandeln
+        except ValueError:
+            QMessageBox.warning(self, "Ungültiger Bestand", "Der Bestand muss eine ganze Zahl sein.")
+            return
+
+        csv_path = os.path.join(self.getAppDirectory(), 'stock_data.csv')
+
+        # Überprüfe, ob die CSV-Datei existiert. Wenn ja, lese sie ein; wenn nein, erstelle einen leeren DataFrame
+        if os.path.exists(csv_path):
+            df = pd.read_csv(csv_path)
+        else:
+            df = pd.DataFrame(columns=['SKU', 'Stock'])
+
+        # Prüfe, ob die SKU bereits im DataFrame vorhanden ist
+        if not df[df['SKU'] == sku].empty:
+            # Aktualisiere den Bestand für die existierende SKU
+            df.loc[df['SKU'] == sku, 'Stock'] = stock
+        else:
+            # Füge einen neuen Datensatz hinzu, wenn die SKU nicht vorhanden ist
+            new_row = {'SKU': sku, 'Stock': stock}
+            df = df._append(new_row, ignore_index=True)
+
+        # Entferne Duplikate basierend auf der 'SKU' Spalte, behalte den letzten Eintrag
+        df.drop_duplicates(subset='SKU', keep='last', inplace=True)
+
+        # Stelle sicher, dass der 'Stock' als Ganzzahl gespeichert wird
+        df['Stock'] = df['Stock'].astype(int)
+
+        # Speichere den aktualisierten DataFrame in der CSV-Datei
+        df.to_csv(csv_path, index=False)
+
+        QMessageBox.information(self, "Bestand aktualisiert", "Der Bestand wurde erfolgreich aktualisiert.")
+
 
     def openAppDirectory(self):
         appDirectory = self.getAppDirectory();
@@ -98,13 +131,21 @@ class CSVLoaderApp(QMainWindow):
         return appDirectory
  
     def find_last_two_csv_files(self):
-        # Liste alle CSV-Dateien im aktuellen Verzeichnis auf
-        csv_files = [f for f in os.listdir(self.getAppDirectory()) if f.endswith('.csv')]
-        # Sortiere die Dateien basierend auf dem Datum im Dateinamen
-        csv_files.sort(key=lambda date: datetime.strptime(date, "%d-%m-%Y.csv"), reverse=True)
-        # Gib die letzten beiden Dateien zurück, falls verfügbar
-        return csv_files[:2] if len(csv_files) >= 2 else csv_files
- 
+        csv_files = [f for f in os.listdir(self.getAppDirectory()) if f.endswith('.csv') and f != 'stock_data.csv']
+        sorted_files = []
+        for filename in csv_files:
+            try:
+                # Versuche, das Datum aus dem Dateinamen zu extrahieren
+                date = datetime.strptime(filename, "%d-%m-%Y.csv")
+                sorted_files.append((date, filename))
+            except ValueError:
+                # Ignoriere Dateien, die nicht dem erwarteten Format entsprechen
+                continue
+        # Sortiere die Dateien nach Datum
+        sorted_files.sort(reverse=True)
+        # Gib die Namen der letzten beiden Dateien zurück
+        return [filename for _, filename in sorted_files[:2]]
+    
     def download_and_save_csv(self):
         try:
             response = requests.get(self.csv_url)
