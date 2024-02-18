@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QTableWidget, QTableWidgetItem, QMessageBox
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QTableWidget, QTableWidgetItem, QMessageBox, QHBoxLayout, QLabel, QLineEdit
 
 from PySide6.QtCore import Slot
 
@@ -19,68 +19,69 @@ import subprocess
  
 
 class CSVLoaderApp(QMainWindow):
-
     def __init__(self):
-
         super().__init__()
-
         self.setWindowTitle("Lagerbestand")
-
         self.csv_url = "https://exhaust.pl/produts_stock/export.csv"
-
         self.last_downloaded_file = None  # Hält den Pfad der zuletzt heruntergeladenen Datei
-
         self.resize(1024, 768)  # Fenstergröße initial auf 1280x1024 Pixel setzen
-
  
-
         mainWidget = QWidget()
-
         self.setCentralWidget(mainWidget)
-
         layout = QVBoxLayout()
-
  
-
         # Button zum Herunterladen der CSV-Datei
-
         self.downloadButton = QPushButton("CSV herunterladen")
-
         self.downloadButton.clicked.connect(self.download_and_save_csv)
-
         layout.addWidget(self.downloadButton)
-
  
-
         # Button zum Laden und Anzeigen der Daten aus der CSV-Datei
-
         self.loadButton = QPushButton("Daten anzeigen")
-
         self.loadButton.clicked.connect(self.display_csv_data)
-
         layout.addWidget(self.loadButton)
-
  
-
         # Button zum Anzeigen des Ordners
-
         self.appDirectoryButton = QPushButton("Ordner anzeigen")
-
         self.appDirectoryButton.clicked.connect(self.openAppDirectory)
-
         layout.addWidget(self.appDirectoryButton)
 
- 
+        # Erstelle ein neues QHBoxLayout für die Elemente in einer Zeile
+        inputRowLayout = QHBoxLayout()
+
+        # Label für "SKU"
+        skuLabel = QLabel("SKU")
+        inputRowLayout.addWidget(skuLabel)
+
+        # Textfeld für SKU
+        self.skuTextField = QLineEdit()
+        self.skuTextField.setObjectName("skuTextField")  # Namensgebung für das Textfeld, falls benötigt
+        inputRowLayout.addWidget(self.skuTextField)
+
+        # Label für "Bestand"
+        stockLabel = QLabel("Bestand")
+        inputRowLayout.addWidget(stockLabel)
+
+        # Textfeld für Bestand
+        self.stockTextField = QLineEdit()
+        self.stockTextField.setObjectName("stockTextField")  # Namensgebung für das Textfeld, falls benötigt
+        inputRowLayout.addWidget(self.stockTextField)
+
+        # Button für die Aktion
+        self.actionButton = QPushButton("Bestand aktualisieren")
+        self.actionButton.clicked.connect(self.updateEbayAmount)  # Verbinden mit einer Dummy-Funktion
+        inputRowLayout.addWidget(self.actionButton)
+
+        # Füge das horizontale Layout dem bestehenden vertikalen Layout hinzu
+        layout.addLayout(inputRowLayout) 
 
         # QTableWidget-Konfiguration
-
         self.tableWidget = QTableWidget()
-
         layout.addWidget(self.tableWidget)
-
         mainWidget.setLayout(layout)
 
-   
+    # Ebay Bestand aktualsiieren
+    def updateEbayAmount(self):
+        print("TODO")
 
     def openAppDirectory(self):
 
