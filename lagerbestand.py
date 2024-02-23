@@ -68,10 +68,16 @@ class CSVLoaderApp(QMainWindow):
         self.stockTextField.setObjectName("stockTextField")  # Namensgebung für das Textfeld, falls benötigt
         inputRowLayout.addWidget(self.stockTextField)
 
-        # Button für die Aktion
+        # Button für Bestand aktualisieren
         self.actionButton = QPushButton("Bestand aktualisieren")
-        self.actionButton.clicked.connect(self.updateEbayAmount)  # Verbinden mit einer Dummy-Funktion
+        self.actionButton.clicked.connect(self.updateEbayAmount)  # Aktualisiere Bestand
         inputRowLayout.addWidget(self.actionButton)
+
+        # Button für Suche SKU
+        self.actionButton = QPushButton("SKU suche")
+        self.actionButton.clicked.connect(self.sucheSKU)  # Suche Zeile mit SKU Nummer
+        inputRowLayout.addWidget(self.actionButton)
+
 
         # Füge das horizontale Layout dem bestehenden vertikalen Layout hinzu
         layout.addLayout(inputRowLayout) 
@@ -81,6 +87,41 @@ class CSVLoaderApp(QMainWindow):
         layout.addWidget(self.tableWidget)
         mainWidget.setLayout(layout)
 
+    def sucheSKU(self):
+        print("")
+
+
+    def updateEbayAmountAll(self):
+
+        merged_df = self.erstelleAktuellesDatenframe();
+        stock_df = self.getStockDataDF()
+
+        # Berechnen der Bestandsdifferenz und Aktualisieren der stock_data.csv
+        for index, row in merged_df.iterrows():
+            sku = row['SKU']
+            new_stock = row['Ebay Bestand'] + row['Stock-Differenz']
+            if sku in stock_df['SKU'].values:
+                current_stock = stock_df.loc[stock_df['SKU'] == sku, 'Stock'].iloc[0]
+                if current_stock != new_stock:
+                    stock_df.loc[stock_df['SKU'] == sku, 'Stock'] = new_stock
+            elif new_stock > 0:
+                # SKU existiert noch nicht in stock_df, füge sie hinzu
+                stock_df = stock_df._append({'SKU': sku, 'Stock': new_stock}, ignore_index=True)
+
+        # Speichere den aktualisierten DataFrame in der CSV-Datei.
+        stock_df.to_csv(self.getStockDataCSVPath(), index=False)
+
+        self.display_csv_data()
+
+    def getStockDataCSVPath(self):
+        return os.path.join(self.getAppDirectory(), 'stock_data.csv');
+
+    def getStockDataDF(self):
+        self.ensure_stock_data_file_exists()
+        df = pd.read_csv(self.getStockDataCSVPath())
+        df['SKU'] = df['SKU'].astype(str)
+        return df
+
     def updateEbayAmount(self):
         sku = str(self.skuTextField.text().strip())
         try:
@@ -89,15 +130,7 @@ class CSVLoaderApp(QMainWindow):
             QMessageBox.warning(self, "Ungültiger Bestand", "Der Bestand muss eine ganze Zahl sein.")
             return
 
-        self.ensure_stock_data_file_exists()
-        csv_path = os.path.join(self.getAppDirectory(), 'stock_data.csv')
-
-        # Überprüfe, ob die CSV-Datei existiert. Wenn ja, lese sie ein; wenn nein, erstelle einen leeren DataFrame.
-        #if os.path.exists(csv_path):
-        df = pd.read_csv(csv_path)
-        df['SKU'] = df['SKU'].astype(str)
-        #else:
-            #df = pd.DataFrame(columns=['SKU', 'Stock'])
+        df = self.getStockDataDF()
 
         # Überprüfe, ob die SKU bereits im DataFrame vorhanden ist.
         if sku in df['SKU'].values:
@@ -115,7 +148,7 @@ class CSVLoaderApp(QMainWindow):
         df['Stock'] = df['Stock'].astype(int)
 
         # Speichere den aktualisierten DataFrame in der CSV-Datei.
-        df.to_csv(csv_path, index=False)
+        df.to_csv(self.getStockDataCSVPath(), index=False)
         
         QMessageBox.information(self, "Bestand aktualisiert", "Der Bestand wurde erfolgreich aktualisiert.")
 
@@ -173,8 +206,8 @@ class CSVLoaderApp(QMainWindow):
             with open(filepath, 'w', encoding='utf-8') as file:
                 file.write(response.text)
             self.last_downloaded_file = filepath  # Speichere den Pfad der heruntergeladenen Datei
-            QMessageBox.information(self, "Information", "CSV-Datei erfolgreich heruntergeladen.")
-            return filepath
+            self.updateEbayAmountAll()
+            QMessageBox.information(self, "Information", "CSV-Datei erfolgreich heruntergeladen. Bestand aktualisiert")
         except requests.RequestException as e:
             QMessageBox.critical(self, "Fehler", f"Fehler beim Laden der CSV-Datei: {e}")
             return None
@@ -187,7 +220,9 @@ class CSVLoaderApp(QMainWindow):
         filename_yesterday = (today - one_day_delta).strftime("%d-%m-%Y") + ".csv"
         return filename_today, filename_yesterday
  
-    def display_csv_data(self):
+
+    def erstelleAktuellesDatenframe(self) -> pd.DataFrame:
+
         last_two_files = self.find_last_two_csv_files()
  
         if len(last_two_files) < 2:
@@ -236,6 +271,12 @@ class CSVLoaderApp(QMainWindow):
         merged_df.rename(columns={'Stock': 'Ebay Bestand'}, inplace=True)
         # Konvertiere 'Aktueller Bestand' explizit in int, um Dezimalstellen zu entfernen
         merged_df['Ebay Bestand'] = merged_df['Ebay Bestand'].astype(int)
+        return merged_df
+    
+    def display_csv_data(self):
+
+        merged_df = self.erstelleAktuellesDatenframe();
+        stock_df = self.getStockDataDF()
 
         filtered_df = merged_df[merged_df['SKU'].isin(stock_df['SKU'])]
 
@@ -271,11 +312,13 @@ class CSVLoaderApp(QMainWindow):
                 stock_diff_value = float(item.text())  # Konvertieren Sie den Wert in float
                 color = None
                 if stock_diff_value < 0 or stock_diff_value > 0:
-                    color = QBrush(QColor(173, 216, 230))
+                    color = QBrush(QColor(0, 0, 139))
+                    foregroundColor = QBrush(QColor(255, 255, 255))
                
                 if color:
                     for col in range(self.tableWidget.columnCount()):
                         self.tableWidget.item(row, col).setBackground(color)
+                        self.tableWidget.item(row, col).setForeground(foregroundColor)
             else:
                 # Dieser Block wird ausgeführt, wenn kein QTableWidgetItem für die Zelle existiert.
                 # Sie können hier ein neues Item erstellen oder eine Warnung ausgeben.
