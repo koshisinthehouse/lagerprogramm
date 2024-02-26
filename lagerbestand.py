@@ -88,7 +88,19 @@ class CSVLoaderApp(QMainWindow):
         mainWidget.setLayout(layout)
 
     def sucheSKU(self):
-        print("")
+        sku_to_find = self.skuTextField.text().strip()  # Entferne Leerzeichen von beiden Seiten des Textes
+        found = False  # Flag, um zu überprüfen, ob die SKU gefunden wurde
+
+        for row in range(self.tableWidget.rowCount()):  # Durchlaufe alle Zeilen
+            item = self.tableWidget.item(row, 0)  # Annahme: SKU ist in der ersten Spalte
+            if item and item.text().strip() == sku_to_find:  # Vergleiche den Text des Items mit der gesuchten SKU
+                self.tableWidget.selectRow(row)  # Selektiere die gefundene Zeile
+                self.tableWidget.scrollToItem(item)  # Scrolle zur gefundenen Zeile, falls sie nicht sichtbar ist
+                found = True
+                break  # Beende die Suche, nachdem die erste Übereinstimmung gefunden wurde
+
+        if not found:
+            QMessageBox.warning(self, "SKU nicht gefunden", "Die eingegebene SKU wurde nicht gefunden.")
 
 
     def updateEbayAmountAll(self):
