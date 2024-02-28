@@ -273,10 +273,13 @@ class CSVLoaderApp(QMainWindow):
         # Merge die DataFrames basierend auf 'SKU'
         merged_df = pd.merge(df_today[['SKU', 'Avaliable', 'Stock']], df_yesterday[['SKU', 'Avaliable', 'Stock']], on='SKU', suffixes=(f' ({label_today})', f' ({label_yesterday})'))
 
+        merged_df[f'Stock ({label_today})'].astype(int64)
+        merged_df[f'Stock ({label_yesterday})'].astype(int64)
 
         # Berechne die Differenz der 'Stock'-Werte
         merged_df['Stock-Differenz'] = merged_df[f'Stock ({label_today})'] - merged_df[f'Stock ({label_yesterday})']
- 
+        
+        merged_df['Stock-Differenz'].astype(int64)
 
         # Füge die Bestand-Daten zur merged_df hinzu und fülle fehlende Werte mit 0 auf
         merged_df = pd.merge(merged_df, stock_df[['SKU', 'Stock']], on='SKU', how='left').fillna(0)
