@@ -78,6 +78,10 @@ class CSVLoaderApp(QMainWindow):
         self.actionButton.clicked.connect(self.sucheSKU)  # Suche Zeile mit SKU Nummer
         inputRowLayout.addWidget(self.actionButton)
 
+        # Button zum Löschen eines Datensatzes
+        self.deleteButton = QPushButton("Datensatz löschen")
+        self.deleteButton.clicked.connect(self.deleteSelectedRecord)
+        layout.addWidget(self.deleteButton)
 
         # Füge das horizontale Layout dem bestehenden vertikalen Layout hinzu
         layout.addLayout(inputRowLayout) 
@@ -165,7 +169,26 @@ class CSVLoaderApp(QMainWindow):
         QMessageBox.information(self, "Bestand aktualisiert", "Der Bestand wurde erfolgreich aktualisiert.")
 
         self.display_csv_data()
+
+    def deleteSelectedRecord(self):
+        selectedRows = self.tableWidget.selectionModel().selectedRows()
+        if not selectedRows:
+            QMessageBox.warning(self, "Keine Auswahl", "Bitte wählen Sie eine Zeile aus.")
+            return
+
+        selectedRow = selectedRows[0].row()  # Nehmen Sie die erste ausgewählte Zeile
+        sku_to_delete = self.tableWidget.item(selectedRow, 0).text()  # SKU befindet sich in der ersten Spalte
+
+        df = self.getStockDataDF()  # Laden Sie die aktuelle Datenframe
+        df = df[df['SKU'] != sku_to_delete]  # Entfernen Sie den Datensatz
+
+        # Speichern Sie den aktualisierten DataFrame
+        df.to_csv(self.getStockDataCSVPath(), index=False)
+
+        QMessageBox.information(self, "Datensatz gelöscht", f"Der Datensatz mit der SKU {sku_to_delete} wurde gelöscht.")
         
+        self.display_csv_data()  # Aktualisieren Sie die Anzeige
+
 
     def ensure_stock_data_file_exists(self):
         """Stellt sicher, dass die stock_data.csv-Datei existiert. Erstellt eine leere Datei, falls nicht vorhanden."""
