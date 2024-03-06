@@ -366,6 +366,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = CSVLoaderApp()
     window.show()
-    window.display_csv_data()
+    #window.display_csv_data()
     sys.exit(app.exec())
  
