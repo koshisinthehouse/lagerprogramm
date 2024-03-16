@@ -230,22 +230,27 @@ class CSVLoaderApp(QMainWindow):
         return [filename for _, filename in sorted_files[:2]]
     
     def download_and_save_csv(self):
-        try:
-            response = requests.get(self.csv_url)
-            response.raise_for_status()
-            current_date = datetime.now().strftime("%d-%m-%Y")
-            app_directory = self.getAppDirectory()
-            filename = f"{current_date}.csv"
-            filepath = os.path.join(app_directory,filename)
-            print("Datei gespeichert unter:"+filepath)
-            with open(filepath, 'w', encoding='utf-8') as file:
-                file.write(response.text)
-            self.last_downloaded_file = filepath  # Speichere den Pfad der heruntergeladenen Datei
-            self.updateEbayAmountAll()
-            QMessageBox.information(self, "Information", "CSV-Datei erfolgreich heruntergeladen. Bestand aktualisiert")
-        except requests.RequestException as e:
-            QMessageBox.critical(self, "Fehler", f"Fehler beim Laden der CSV-Datei: {e}")
-            return None
+        current_date = datetime.now().strftime("%d-%m-%Y")
+        filename = f"{current_date}.csv"
+        app_directory = self.getAppDirectory()
+        filepath = os.path.join(app_directory, filename)
+        
+        # Prüfe, ob die Datei für den heutigen Tag bereits existiert
+        if os.path.exists(filepath):
+            QMessageBox.information(self, "Information", "Die Datei für den aktuellen Tag existiert bereits. Es werden keine Aktualisierungen vorgenommen.")
+            return
+        else:
+            try:
+                response = requests.get(self.csv_url)
+                response.raise_for_status()
+                with open(filepath, 'w', encoding='utf-8') as file:
+                    file.write(response.text)
+                self.last_downloaded_file = filepath  # Speichere den Pfad der heruntergeladenen Datei
+                # Da die Datei neu erstellt wurde, rufen Sie updateEbayAmountAll() auf
+                self.updateEbayAmountAll()
+                QMessageBox.information(self, "Information", "CSV-Datei erfolgreich heruntergeladen. Bestand aktualisiert.")
+            except requests.RequestException as e:
+                QMessageBox.critical(self, "Fehler", f"Fehler beim Laden der CSV-Datei: {e}")
  
     def generate_filenames_for_last_two_days(self):
         today = datetime.now()
