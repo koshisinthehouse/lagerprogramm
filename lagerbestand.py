@@ -120,7 +120,7 @@ class CSVLoaderApp(QMainWindow):
                 current_stock = stock_df.loc[stock_df['SKU'] == sku, 'Stock'].iloc[0]
                 if current_stock != new_stock:
                     stock_df.loc[stock_df['SKU'] == sku, 'Stock'] = new_stock
-            elif new_stock > 0:
+            #elif new_stock > 0:
                 # SKU existiert noch nicht in stock_df, füge sie hinzu
                 # stock_df = stock_df._append({'SKU': sku, 'Stock': new_stock}, ignore_index=True)
 
