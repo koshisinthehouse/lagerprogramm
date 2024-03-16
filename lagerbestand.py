@@ -122,7 +122,7 @@ class CSVLoaderApp(QMainWindow):
                     stock_df.loc[stock_df['SKU'] == sku, 'Stock'] = new_stock
             elif new_stock > 0:
                 # SKU existiert noch nicht in stock_df, füge sie hinzu
-                stock_df = stock_df._append({'SKU': sku, 'Stock': new_stock}, ignore_index=True)
+                # stock_df = stock_df._append({'SKU': sku, 'Stock': new_stock}, ignore_index=True)
 
         # Speichere den aktualisierten DataFrame in der CSV-Datei.
         stock_df.to_csv(self.getStockDataCSVPath(), index=False)
